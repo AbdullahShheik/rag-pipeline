@@ -7,6 +7,7 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from sqlalchemy import create_engine, Column, Integer, Text
 from sqlalchemy.orm import declarative_base, sessionmaker
 from pgvector.sqlalchemy import Vector
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 PDF_PATH = "/docs/CoMuRoS_LLM-Based_Generalizable_Hierarchical_Task_Planning_and_Execution_for_Heterogeneous_Robot_Teams_with_.pdf"
 EMBEDDING_DIM = 3072
@@ -49,7 +50,6 @@ def get_embedder():
         google_api_key=os.getenv("GOOGLE_API_KEY"),
     )
 
-
 def store_chunks(chunks, embedder):
     session = get_session()
 
@@ -68,13 +68,58 @@ def store_chunks(chunks, embedder):
     finally:
         session.close()
 
+def retrieve_top_k(question: str, embedder, k: int = 3):
+    question_vector = embedder.embed_query(question)
+
+    session = get_session()
+    try:
+        results = (
+            session.query(LangchainChunk)
+            .order_by(LangchainChunk.embedding.cosine_distance(question_vector))
+            .limit(k)
+            .all()
+        )
+        return results
+    finally:
+        session.close()
+
+
+def generate_answer(question: str, retrieved_chunks, llm):
+    context = "\n\n".join(chunk.content for chunk in retrieved_chunks)
+
+    prompt = f"""Answer the question using only the context below. If the context doesn't contain the answer, say so.
+
+Context:
+{context}
+
+Question: {question}
+
+Answer:"""
+
+    response = llm.invoke(prompt)
+    
+    # Handle both string and list response formats
+    if isinstance(response.content, list):
+        return "".join(
+            block["text"] for block in response.content 
+            if isinstance(block, dict) and block.get("type") == "text"
+        )
+    return response.content
 
 if __name__ == "__main__":
     Base.metadata.create_all(engine)
 
-    chunks = load_and_chunk(PDF_PATH)
-    print(f"Loaded {len(chunks)} chunks from PDF")
-
     embedder = get_embedder()
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-3.6-flash",
+        google_api_key=os.getenv("GOOGLE_API_KEY"),
+    )
 
-    store_chunks(chunks, embedder)
+    question = "What is CoMuRoS and what problem does it solve?"
+    top_chunks = retrieve_top_k(question, embedder, k=3)
+
+    print(f"\nRetrieved {len(top_chunks)} chunks for question: '{question}'\n")
+
+    answer = generate_answer(question, top_chunks, llm)
+    print("---- Generated Answer ----")
+    print(answer)
