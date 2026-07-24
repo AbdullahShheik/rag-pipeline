@@ -1,0 +1,11 @@
+langchain
+langchain-community
+langchain-google-genai
+llama-index
+llama-index-embeddings-gemini
+llama-index-llms-gemini
+llama-index-vector-stores-postgres
+pypdf
+psycopg2-binary
+python-dotenv
+sqlalchemy
