@@ -12,7 +12,9 @@ from sqlalchemy.engine.url import make_url
 
 PDF_PATH = "/docs/CoMuRoS_LLM-Based_Generalizable_Hierarchical_Task_Planning_and_Execution_for_Heterogeneous_Robot_Teams_with_.pdf"
 EMBEDDING_DIM = 3072
-TABLE_NAME = "llamaindex_chunks" 
+TABLE_NAME = "llamaindex_chunks"
+
+SPLITTER = SentenceSplitter(chunk_size=500, chunk_overlap=50)
 
 
 def get_embed_model():
@@ -80,7 +82,6 @@ def load_documents(pdf_path: str):
 
 def get_or_build_index(storage_context, embed_model):
     documents = load_documents(PDF_PATH)
-    splitter = SentenceSplitter(chunk_size=500, chunk_overlap=50)
 
     try:
         index = load_index_from_storage(storage_context)
@@ -98,7 +99,7 @@ def get_or_build_index(storage_context, embed_model):
         index = VectorStoreIndex.from_documents(
             documents,
             storage_context=storage_context,
-            transformations=[splitter],
+            transformations=[SPLITTER],
             embed_model=embed_model,
         )
         print(f"Indexed {len(documents)} documents.")
@@ -111,6 +112,7 @@ if __name__ == "__main__":
     llm = get_llm()
     Settings.embed_model = embed_model
     Settings.llm = llm
+    Settings.node_parser = SPLITTER  
 
     storage_context = get_storage_context()
     index = get_or_build_index(storage_context, embed_model)

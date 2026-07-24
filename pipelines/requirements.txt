@@ -2,10 +2,13 @@ langchain
 langchain-community
 langchain-google-genai
 langchain-text-splitters
-llama-index
-llama-index-embeddings-gemini
-llama-index-llms-gemini
+llama-index-core
+llama-index-embeddings-google-genai
+llama-index-llms-google-genai
 llama-index-vector-stores-postgres
+llama-index-storage-docstore-postgres
+llama-index-storage-index-store-postgres
+llama-index-readers-file
 pypdf
 psycopg2-binary
 python-dotenv

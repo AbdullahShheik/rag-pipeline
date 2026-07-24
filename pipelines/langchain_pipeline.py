@@ -98,7 +98,6 @@ Answer:"""
 
     response = llm.invoke(prompt)
     
-    # Handle both string and list response formats
     if isinstance(response.content, list):
         return "".join(
             block["text"] for block in response.content 
