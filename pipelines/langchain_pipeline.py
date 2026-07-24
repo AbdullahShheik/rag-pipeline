@@ -115,6 +115,19 @@ if __name__ == "__main__":
         google_api_key=os.getenv("GOOGLE_API_KEY"),
     )
 
+    session = get_session()
+    try:
+        already_ingested = session.query(LangchainChunk).first() is not None
+    finally:
+        session.close()
+
+    if not already_ingested:
+        print(f"No chunks found. Ingesting from {PDF_PATH} ...")
+        chunks = load_and_chunk(PDF_PATH)
+        store_chunks(chunks, embedder)
+    else:
+        print("Chunks already present in DB, skipping ingestion.")
+
     question = "What is CoMuRoS and what problem does it solve?"
     top_chunks = retrieve_top_k(question, embedder, k=3)
 
