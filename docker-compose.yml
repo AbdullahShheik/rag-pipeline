@@ -11,6 +11,7 @@ services:
       - "5433:5432"
     volumes:
       - pgvector_data:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
@@ -27,7 +28,7 @@ services:
         condition: service_healthy
     volumes:
       - ./pipelines:/app
-      - ./docs:/app/docs
+      - ./docs:/docs
     command: python langchain_pipeline.py
 
   llamaindex_pipeline:
@@ -40,7 +41,7 @@ services:
         condition: service_healthy
     volumes:
       - ./pipelines:/app
-      - ./docs:/app/docs
+      - ./docs:/docs
     command: python llamaindex_pipeline.py
 
 volumes:
